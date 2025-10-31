@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useNavigation } from "@react-navigation/native";
 import axios from "axios";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import {
   Alert,
   Image,
@@ -31,6 +32,30 @@ const PassengerDetailsScreen = () => {
       }
     }
   }, [params]);
+
+  // Configure header title and action
+  const navigation = useNavigation();
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: "Passenger Details",
+      headerTitleAlign: "center",
+      headerRight: () => (
+        <TouchableOpacity
+          style={{ marginRight: 12 }}
+          onPress={() => {
+            const phone = ride?.passenger_id?.phone;
+            if (phone) {
+              Alert.alert("Call", `Call ${phone}`);
+            } else {
+              Alert.alert("No phone", "Passenger has no phone number");
+            }
+          }}
+        >
+          <Ionicons name="call-outline" size={22} color="#4361EE" />
+        </TouchableOpacity>
+      ),
+    });
+  }, [navigation, ride]);
 
   const handleAccept = async () => {
     if (!ride) return;
