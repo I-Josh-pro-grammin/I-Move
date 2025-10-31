@@ -3,7 +3,7 @@ import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 const COLORS = {
   primary: '#4361EE',
@@ -21,6 +21,7 @@ const COLORS = {
 
 export default function RiderProfileScreen() {
   const router = useRouter();
+  const { user, logout } = useAuth();
 
   const handleLogout = async () => {
     Alert.alert(
@@ -30,16 +31,10 @@ export default function RiderProfileScreen() {
         { text: "Cancel", style: "cancel" },
         { 
           text: "Logout", 
+          style: 'destructive',
           onPress: async () => {
-            try {
-              // Clear user data
-              await AsyncStorage.removeItem('userToken');
-              await AsyncStorage.removeItem('userRole');
-              // Navigate to welcome screen
-              router.replace('/');
-            } catch (error) {
-              console.error('Error during logout:', error);
-            }
+            await logout();
+            router.replace('/');
           }
         }
       ]
@@ -58,31 +53,35 @@ export default function RiderProfileScreen() {
         <View style={styles.profileIcon}>
           <Ionicons name="person" size={40} color={COLORS.white} />
         </View>
-        <Text style={styles.profileName}>John Rider</Text>
-        <Text style={styles.profileRole}>Rider</Text>
+        <Text style={styles.profileName}>{user?.full_name || 'Rider'}</Text>
+        <Text style={styles.profileRole}>{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'Rider'}</Text>
       </View>
       
       <View style={styles.infoSection}>
         <View style={styles.infoItem}>
           <Ionicons name="mail" size={20} color={COLORS.primary} style={styles.infoIcon} />
-          <Text style={styles.infoText}>john.rider@example.com</Text>
+          <Text style={styles.infoText}>{user?.email || 'N/A'}</Text>
         </View>
         <View style={styles.infoItem}>
           <Ionicons name="call" size={20} color={COLORS.primary} style={styles.infoIcon} />
-          <Text style={styles.infoText}>+1 234 567 8901</Text>
+          <Text style={styles.infoText}>{user?.phone || 'N/A'}</Text>
         </View>
         <View style={styles.infoItem}>
-          <Ionicons name="car" size={20} color={COLORS.primary} style={styles.infoIcon} />
-          <Text style={styles.infoText}>Toyota Prius (2019)</Text>
+          <Ionicons name="bicycle" size={20} color={COLORS.primary} style={styles.infoIcon} />
+          <Text style={styles.infoText}>
+            {user?.vehicle_type?.charAt(0).toUpperCase() + user?.vehicle_type?.slice(1) || 'N/A'}
+          </Text>
         </View>
         <View style={styles.infoItem}>
           <Ionicons name="star" size={20} color={COLORS.primary} style={styles.infoIcon} />
-          <Text style={styles.infoText}>Rating: 4.8</Text>
+          <Text style={styles.infoText}>Rating: {user?.rating?.toFixed(1) || '0.0'}</Text>
         </View>
-        <View style={styles.infoItem}>
-          <Ionicons name="card" size={20} color={COLORS.primary} style={styles.infoIcon} />
-          <Text style={styles.infoText}>License Plate: ABC123</Text>
-        </View>
+        {user?.license_plate && (
+          <View style={styles.infoItem}>
+            <Ionicons name="card" size={20} color={COLORS.primary} style={styles.infoIcon} />
+            <Text style={styles.infoText}>License: {user.license_plate}</Text>
+          </View>
+        )}
       </View>
       
       <View style={styles.actionsSection}>

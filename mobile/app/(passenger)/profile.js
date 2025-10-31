@@ -1,9 +1,9 @@
 import React from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAuth } from '../../src/contexts/AuthContext';
 
 const COLORS = {
   primary: '#4361EE',
@@ -22,35 +22,24 @@ const COLORS = {
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [user, setUser] = React.useState(null);
-
-  React.useEffect(() => {
-    // Load user data from AsyncStorage
-    const loadUserData = async () => {
-      try {
-        const userData = await AsyncStorage.getItem('userData');
-        if (userData) {
-          setUser(JSON.parse(userData));
-        }
-      } catch (error) {
-        console.error('Error loading user data:', error);
-      }
-    };
-
-    loadUserData();
-  }, []);
+  const { user, logout } = useAuth();
 
   const handleLogout = async () => {
-    try {
-      // Clear user data from AsyncStorage
-      await AsyncStorage.removeItem('userToken');
-      await AsyncStorage.removeItem('userData');
-      
-      // Navigate to welcome screen
-      router.replace('/');
-    } catch (error) {
-      console.error('Error logging out:', error);
-    }
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Logout',
+          style: 'destructive',
+          onPress: async () => {
+            await logout();
+            router.replace('/');
+          },
+        },
+      ]
+    );
   };
 
   return (
@@ -69,7 +58,7 @@ export default function ProfileScreen() {
         </View>
         
         <Text style={styles.userName}>{user?.full_name || 'User'}</Text>
-        <Text style={styles.userRole}>Passenger</Text>
+        <Text style={styles.userRole}>{user?.role?.charAt(0).toUpperCase() + user?.role?.slice(1) || 'User'}</Text>
       </View>
 
       <View style={styles.infoSection}>

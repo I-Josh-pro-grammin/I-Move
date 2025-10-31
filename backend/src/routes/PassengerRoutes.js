@@ -68,17 +68,35 @@ router.post("/geocode", authenticate, async (req, res) => {
         message: "Address is required",
       });
     }
+
+    // Check if API key is configured
+    if (!process.env.OPENROUTESERVICE_API_KEY) {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Geocoding service is not available. Please select destination on the map.",
+        service_available: false,
+      });
+    }
+
     const result = await geocodeAddress(address);
     if (!result) {
       return res.status(404).json({
         success: false,
-        message: "Address not found",
+        message:
+          "Address not found. Please try a different address or select on the map.",
       });
     }
     res.status(200).json({ success: true, ...result });
   } catch (error) {
     console.error("Geocode error:", error);
-    res.status(500).json({ success: false, error: error.message });
+    res.status(500).json({
+      success: false,
+      error:
+        error.message ||
+        "Geocoding service temporarily unavailable. Please select destination on the map.",
+      service_available: false,
+    });
   }
 });
 
