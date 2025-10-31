@@ -6,7 +6,7 @@ import { calculateDistance } from "../utils/haversine.js";
 dotenv.config();
 
 const OPENROUTESERVICE_API_KEY = process.env.OPENROUTESERVICE_API_KEY;
-const OPENROUTESERVICE_BASE_URL = "https://api.openrouteservice.org/v2";
+const OPENROUTESERVICE_BASE_URL = "https://api.openrouteservice.org";
 
 // Get nearest riders with distance calculation
 export const getNearestRiders = async (req, res) => {
@@ -156,14 +156,15 @@ export const getDistancesWithOpenRouteService = async (
     const profile = "driving-car"; // Can be: driving-car, driving-motorcycle, cycling-regular, etc.
 
     const response = await axios.post(
-      `${OPENROUTESERVICE_BASE_URL}/matrix/${profile}`,
+      `${OPENROUTESERVICE_BASE_URL}/v2/matrix/${profile}`,
       {
         locations: locations,
         metrics: ["distance", "duration"],
       },
       {
         headers: {
-          Authorization: `Bearer ${OPENROUTESERVICE_API_KEY}`,
+          // OpenRouteService expects the API key in the Authorization header (no Bearer prefix)
+          Authorization: `${OPENROUTESERVICE_API_KEY}`,
           "Content-Type": "application/json",
         },
       }
@@ -211,12 +212,15 @@ export const geocodeAddress = async (address) => {
       throw new Error("OpenRouteService API key not configured");
     }
 
+    // Use the geocode search endpoint
     const response = await axios.get(
-      `${OPENROUTESERVICE_BASE_URL}/geocoding/direct`,
+      `${OPENROUTESERVICE_BASE_URL}/geocode/search`,
       {
         params: {
           text: address,
-          api_key: OPENROUTESERVICE_API_KEY,
+        },
+        headers: {
+          Authorization: `${OPENROUTESERVICE_API_KEY}`,
         },
       }
     );
@@ -227,14 +231,15 @@ export const geocodeAddress = async (address) => {
       return {
         latitude: lat,
         longitude: lng,
-        address: feature.properties.label,
-        formatted_address: feature.properties.label,
+        address: feature.properties.label || feature.properties.name || address,
+        formatted_address:
+          feature.properties.label || feature.properties.name || address,
       };
     }
 
     return null;
   } catch (error) {
-    console.error("Geocoding error:", error.message);
+    console.error("Geocoding error:", error.message || error);
     throw error;
   }
 };
@@ -246,13 +251,15 @@ export const reverseGeocode = async (latitude, longitude) => {
       throw new Error("OpenRouteService API key not configured");
     }
 
-    // OpenRouteService reverse geocoding expects coordinates as "lat,lon" string
+    // OpenRouteService reverse geocoding expects the point as "lng,lat"
     const response = await axios.get(
-      `${OPENROUTESERVICE_BASE_URL}/geocoding/reverse`,
+      `${OPENROUTESERVICE_BASE_URL}/geocode/reverse`,
       {
         params: {
-          point: `${latitude},${longitude}`,
-          api_key: OPENROUTESERVICE_API_KEY,
+          point: `${longitude},${latitude}`,
+        },
+        headers: {
+          Authorization: `${OPENROUTESERVICE_API_KEY}`,
         },
       }
     );
@@ -260,8 +267,8 @@ export const reverseGeocode = async (latitude, longitude) => {
     if (response.data.features && response.data.features.length > 0) {
       const feature = response.data.features[0];
       return {
-        address: feature.properties.label,
-        formatted_address: feature.properties.label,
+        address: feature.properties.label || feature.properties.name,
+        formatted_address: feature.properties.label || feature.properties.name,
         latitude,
         longitude,
       };
@@ -269,7 +276,7 @@ export const reverseGeocode = async (latitude, longitude) => {
 
     return null;
   } catch (error) {
-    console.error("Reverse geocoding error:", error.message);
+    console.error("Reverse geocoding error:", error.message || error);
     throw error;
   }
 };
