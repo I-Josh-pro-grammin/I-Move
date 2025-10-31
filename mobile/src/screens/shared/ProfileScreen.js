@@ -2,13 +2,17 @@ import React from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'expo-router';
 import { COLORS } from '../../config/constants';
 
 const ProfileScreen = () => {
   const { user, logout } = useAuth();
+  const router = useRouter();
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
+    // Navigate back to welcome/login
+    router.replace('/');
   };
 
   return (
