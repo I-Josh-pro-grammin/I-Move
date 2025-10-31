@@ -177,6 +177,11 @@ export default function RiderHomeScreen() {
             }
           } catch (error) {
             console.error("Error declining ride:", error);
+            if (error.response?.status === 401) {
+              await logout();
+              router.replace("/auth/login");
+              return;
+            }
             Alert.alert("Error", "Failed to decline ride");
           }
         },
