@@ -4,7 +4,7 @@ import { generateToken } from '../utils/jwt.js';
 
 export const register = async (req, res) => {
   try {
-    const { name, full_name, email, password, phone, role } = req.body;
+    const { full_name, email, password, phone, role } = req.body;
 
     // Validate required fields
     if (!email || !password || !phone) {
@@ -35,7 +35,7 @@ export const register = async (req, res) => {
     const hashed = await bcrypt.hash(password, 10);
 
     const user = await User.create({
-      full_name: full_name || name,
+      full_name: full_name,
       email,
       phone,
       password: hashed,
